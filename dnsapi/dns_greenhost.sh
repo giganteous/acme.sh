@@ -45,7 +45,7 @@ dns_greenhost_add() {
   export _H1="Content-Type: application/json"
   export _H2="Authorization: Bearer $GH_API_KEY"
   PURL='https://service.greenhost.net/api/v2/domains/'$_domain'/records'
-  PBODY='{"type":"TXT","name":"'$_sub_domain'","data":"'$txtvalue'","ttl":120}'
+  PBODY='{"type":"TXT","name":"'$_sub_domain'","data":"\"'$txtvalue'\"","ttl":120}'
 
   _debug PURL "$PURL"
   _debug PBODY "$PBODY"
@@ -143,8 +143,6 @@ dns_greenhost_rm() {
       fi
     fi
 
-    ## Greenhost does not offer next page support.
-    return 1
   done
 
   ## finished correctly
