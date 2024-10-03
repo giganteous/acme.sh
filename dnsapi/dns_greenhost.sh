@@ -8,6 +8,10 @@ Options:
 Author: <kai@xs4all.nl>
 '
 
+# It is a "Cosmos" api, compatible with Digital Ocean, but they want
+# quotes around the textrecord supplied by us.
+GH_Api="https://service.greenhost.net/api/v2"
+
 #####################  Public functions  #####################
 
 ## Create the text record for validation.
@@ -44,7 +48,8 @@ dns_greenhost_add() {
   ## Set the header with our post type and key auth key
   export _H1="Content-Type: application/json"
   export _H2="Authorization: Bearer $GH_API_KEY"
-  PURL='https://service.greenhost.net/api/v2/domains/'$_domain'/records'
+  PURL="$GH_Api/domains/$_domain/records"
+  # We added quotes for greenhost.net
   PBODY='{"type":"TXT","name":"'$_sub_domain'","data":"\"'$txtvalue'\"","ttl":120}'
 
   _debug PURL "$PURL"
@@ -97,7 +102,7 @@ dns_greenhost_rm() {
   export _H1="Content-Type: application/json"
   export _H2="Authorization: Bearer $GH_API_KEY"
   ## get URL for the list of domains
-  GURL="https://service.greenhost.net/api/v2/domains/$_domain/records"
+  GURL="$GH_Api/domains/$_domain/records"
 
   ## 1) get the URL
   ## the create request - get
@@ -112,7 +117,7 @@ dns_greenhost_rm() {
   _debug2 record_list "$record_list"
 
   ## 2) find records
-  ## check for what we are looking for: "type":"A","name":"$_sub_domain"
+  ## check for what we are looking for: "name":"$_sub_domain"
   record="$(echo "$record_list" | _egrep_o "\"id\"\s*\:\s*\"*[0-9]+\"*[^}]*\"name\"\s*\:\s*\"$_sub_domain\"[^}]*$txtvalue")"
 
   if [ -n "$record" ]; then
@@ -124,7 +129,7 @@ dns_greenhost_rm() {
       echo "$rec_ids" | while IFS= read -r rec_id; do
         ## delete the record
         ## delete URL for removing the one we dont want
-        DURL="https://service.greenhost.net/api/v2/domains/$_domain/records/$rec_id"
+        DURL="$GH_Api/domains/$_domain/records/$rec_id"
 
         ## the create request - delete
         ## args: BODY, URL, [need64, httpmethod]
@@ -154,7 +159,6 @@ dns_greenhost_rm() {
 # _domain=domain.com
 _get_root() {
   domain=$1
-  DOMURL="https://service.greenhost.net/api/v2/domains"
   i=2
   p=1
   while true; do
@@ -165,7 +169,7 @@ _get_root() {
       return 1
     fi
 
-    if _get "$DOMURL/${_domain}/records"; then
+    if _get "$GH_Api/domains/${_domain}/records"; then
       _code="$(grep "^HTTP" "$HTTP_HEADER" | _tail_n 1 | cut -d " " -f 2 | tr -d "\\r\\n")"
       _debug "http response code $_code"
       if [ "${_code}" = "200" ]; then
