@@ -173,8 +173,8 @@ _get_root() {
       _code="$(grep "^HTTP" "$HTTP_HEADER" | _tail_n 1 | cut -d " " -f 2 | tr -d "\\r\\n")"
       _debug "http response code $_code"
       if [ "${_code}" = "200" ]; then
-        _debug _domain $_domain
-        _debug _sub_domain $_sub_domain
+        _debug _domain "$_domain"
+        _debug _sub_domain "$_sub_domain"
         return 0
       fi
     else
@@ -184,18 +184,4 @@ _get_root() {
     i=$(_math "$i" + 1)
   done
   return 1
-}
-
-_get_with_rcode() {
-  url=$1
-  _debug "$url"
-
-  response="$(_get "$url")"
-
-  if [ "$?" != "0" ]; then
-    _err "error $ep"
-    return 1
-  fi
-  _debug2 response "$response"
-  return 0
 }
