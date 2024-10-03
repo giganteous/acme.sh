@@ -99,51 +99,49 @@ dns_greenhost_rm() {
   ## get URL for the list of domains
   GURL="https://service.greenhost.net/api/v2/domains/$_domain/records"
 
-  ## Get all the matching records
-  while true; do
-    ## 1) get the URL
-    ## the create request - get
-    ## args: URL, [onlyheader, timeout]
-    record_list="$(_get "$GURL")"
+  ## 1) get the URL
+  ## the create request - get
+  ## args: URL, [onlyheader, timeout]
+  record_list="$(_get "$GURL")"
 
-    ## check response
-    if [ "$?" != "0" ]; then
-      _err "error in record_list response: $record_list"
-      return 1
+  ## check response
+  if [ "$?" != "0" ]; then
+    _err "error in record_list response: $record_list"
+    return 1
+  fi
+  _debug2 record_list "$record_list"
+
+  ## 2) find records
+  ## check for what we are looking for: "type":"A","name":"$_sub_domain"
+  record="$(echo "$record_list" | _egrep_o "\"id\"\s*\:\s*\"*[0-9]+\"*[^}]*\"name\"\s*\:\s*\"$_sub_domain\"[^}]*$txtvalue")"
+
+  if [ -n "$record" ]; then
+
+    ## we found records
+    rec_ids="$(echo "$record" | _egrep_o "id\"\s*\:\s*\"*[0-9]+" | _egrep_o "[0-9]+")"
+    _debug rec_ids "$rec_ids"
+    if [ -n "$rec_ids" ]; then
+      echo "$rec_ids" | while IFS= read -r rec_id; do
+        ## delete the record
+        ## delete URL for removing the one we dont want
+        DURL="https://service.greenhost.net/api/v2/domains/$_domain/records/$rec_id"
+
+        ## the create request - delete
+        ## args: BODY, URL, [need64, httpmethod]
+        response="$(_post "" "$DURL" "" "DELETE")"
+
+        ## check response (sort of)
+        if [ "$?" != "0" ]; then
+          _err "error in remove response: $response"
+          return 1
+        fi
+        _debug2 response "$response"
+        return 0
+      done
     fi
-    _debug2 record_list "$record_list"
+  fi
 
-    ## 2) find records
-    ## check for what we are looking for: "type":"A","name":"$_sub_domain"
-    record="$(echo "$record_list" | _egrep_o "\"id\"\s*\:\s*\"*[0-9]+\"*[^}]*\"name\"\s*\:\s*\"$_sub_domain\"[^}]*$txtvalue")"
-
-    if [ -n "$record" ]; then
-
-      ## we found records
-      rec_ids="$(echo "$record" | _egrep_o "id\"\s*\:\s*\"*[0-9]+" | _egrep_o "[0-9]+")"
-      _debug rec_ids "$rec_ids"
-      if [ -n "$rec_ids" ]; then
-        echo "$rec_ids" | while IFS= read -r rec_id; do
-          ## delete the record
-          ## delete URL for removing the one we dont want
-          DURL="https://service.greenhost.net/api/v2/domains/$_domain/records/$rec_id"
-
-          ## the create request - delete
-          ## args: BODY, URL, [need64, httpmethod]
-          response="$(_post "" "$DURL" "" "DELETE")"
-
-          ## check response (sort of)
-          if [ "$?" != "0" ]; then
-            _err "error in remove response: $response"
-            return 1
-          fi
-          _debug2 response "$response"
-          return 0
-        done
-      fi
-    fi
-
-  done
+  # Greenhost.net has no nextpage support according to docs.
 
   ## finished correctly
   return 0
