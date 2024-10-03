@@ -9,7 +9,8 @@ Author: <kai@xs4all.nl>
 '
 
 # It is a "Cosmos" api, compatible with Digital Ocean, but they want
-# quotes around the textrecord supplied by us.
+# quotes around the textrecord supplied by us. And they don't have
+# a domain listing api, so we have to make an educated guess.
 GH_Api="https://service.greenhost.net/api/v2"
 
 #####################  Public functions  #####################
